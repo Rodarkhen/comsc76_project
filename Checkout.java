@@ -2,8 +2,8 @@
 *
 */
 
-
 import java.util.*;
+
 class Time {
     int hour;
     int minute;
@@ -77,7 +77,7 @@ class Time {
         setHour(hour);
     }
 
-    @override
+    @Override
     public String toString() {
         return String.format("%02d:%02d:%02d", this.hour, this.minute, this.second);
     }
@@ -86,62 +86,73 @@ class Time {
         return (this.hour * 3600) + (this.minute * 60) + this.second;
     }
     
-    public int[] fromNumber(int number){//takes an integer parameter and returns an array of integers that represent the properties.
-       int [] arr = new int [3]; 
-       arr [0] = number / 3600;     // this represents the hour
-       arr [1] = (number % 3600) / 60;     // this represents the minute
-       arr [2] = number % 60;       // this represents the second
-       return arr;
+    public static Time fromSeconds(int totalSeconds) {
+        int hour = totalSeconds / 3600;
+        int minute = (totalSeconds % 3600) / 60;
+        int second = totalSeconds % 60;
+        return new Time(hour, minute, second);
     }
 
-     // Method to add duration (in seconds) to this Time object
-     public Time addDuration(int duration) {
-        int totalSeconds = this.toSeconds() + duration;
-        int[] timeComponents = fromNumber(totalSeconds);
-        return new Time(timeComponents[0], timeComponents[1], timeComponents[2]);
+    public void addSeconds(int seconds) {
+        int totalSeconds = this.toSeconds() + seconds;
+        Time newTime = Time.fromSeconds(totalSeconds);
+        this.setTime(newTime.getHour(), newTime.getMinute(), newTime.getSecond());
     }
 }
 
 class Customer {
     private int numItems;
-    private Time arriveTime; //arrival time of customer in checkout station in seconds 
+    private Time arriveTime; //arrival time of customer in to queue for checkout station 
     private int checkoutDuration; // time user needed for checkout in seconds 
-    private Time finishCheckout;
+    private Time finishCheckoutTime;
     private static Random random = new Random(); // Random object for generating random numbers
 
-    public Customer(int numItems, Time arriveTime, int checkoutDuration) {
+    private static final int TIME_PER_ITEM = 5; // Time to scan each item (seconds)
+    private static final int PAYMENT_TIME = 30; // Time to pay (seconds)
+    private static final int MAX_ITEMS = 30;
+    private static final int MIN_ITEMS = 1;
+
+    public Customer(int arriveTimeInSeconds) {
+        this.numItems = random.nextInt(MAX_ITEMS) + MIN_ITEMS;     //number will be randomized in main method
+        this.arriveTime = Time.fromSeconds(arriveTimeInSeconds);
+        this.checkoutDuration = numItems * TIME_PER_ITEM + PAYMENT_TIME;
+    }
+    
+    /*public Customer(int numItems, Time arriveTime, int checkoutDuration) {
         this.numItems = numItems;     //number will be randomized in main method
         this.arriveTime = arriveTime;
         this.checkoutDuration = checkoutDuration;
     }
+    */
     
     public int getNumItems() {
         return this.numItems;  
     }
     
-    public void setNumItems(){
+   /* public void setNumItems(){
         this.numItems= random.nextInt(30) + 1; // Generates a number between 1 and 30 (inclusive)
-    } 
+    }*/
 
     public Time getArriveTime() {
         return this.arriveTime;  
     }
     
-    public void setArriveTime(Time arriveTime){
+    /*public void setArriveTime(Time arriveTime){
         this.arriveTime = arriveTime;
-    } 
+    } */ 
 
     public int getCheckoutDuration() {
         return this.checkoutDuration;  
     }
 
-    // Setter for checkoutDuration
+    /*// Setter for checkoutDuration
      public void setCheckoutDuration(int checkoutDuration) {
         this.checkoutDuration = checkoutDuration;
         this.totalTime = calculateTotalTime(); // Update totalTime
     }
+        */
 
-    // Method to calculate total time
+    /*// Method to calculate total time
     private Time calculateTotalTime() {
         return this.arriveTime.addDuration(this.checkoutDuration);
     }
@@ -150,12 +161,22 @@ class Customer {
     public Time getTotalTime() {
         return this.totalTime;
     }
+        */
+
+    public void setFinishCheckoutTime(Time finishCheckoutTime) {
+        this.finishCheckoutTime = finishCheckoutTime;
+    }
+
+    public Time getFinishCheckoutTime() {
+        return finishCheckoutTime;
+    }
+    
 
     // toString method to print the attributes of Customers class
     @Override
     public String toString() {
-        return String.format("Customers[numItems=%d, arriveTime=%s, checkoutDuration=%d, totalTime=%s]", 
-                             numItems, arriveTime.toString(), checkoutDuration, totalTime.toString());
+        return String.format("Customers[numItems=%d, arriveTime=%s, checkoutDuration=%d, finishCheckoutTime=%s]", 
+                             numItems, arriveTime.toString(), checkoutDuration, finishCheckoutTime.toString());
     }
     
 }
@@ -173,30 +194,28 @@ class CheckoutStation {
     private Queue<Customer> queue;
     private boolean isAvailable;
     private int customersServed;
-    private Time totalWaitTime;
-    private Time avgWaitingTime;
-    private int avgCustomer;
+    private int totalWaitTime;
+    private int maxQueueLength;
 
     // default constructor
     public CheckoutStation() {
         this.queue = new LinkedList<>();
-        this.available = true;
+        this.isAvailable = true;
         this.customersServed = 0;
-        this.totalWaitTime = new Time();
-        this.avgWaitingTime = new Time();
-        this.avgCustomer = 0;
+        this.totalWaitTime = 0;
+        this.maxQueueLength = 0;
     }
 
     public boolean isAvailable() {
-        return available;
+        return isAvailable;
     }
 
     public void busy() {
-        this.available = false;
+        this.isAvailable = false;
     }
 
     public void empty() {
-        this.available = true;
+        this.isAvailable = true;
     }
 
     public int getCustomersServed() {
@@ -207,29 +226,47 @@ class CheckoutStation {
         this.customersServed = customersServed;
     }
 
-    public Time getTotalWaitTime() {
+    public int getTotalWaitTime() {
         return totalWaitTime;
     }
 
-    public void setTotalWaitTime(Time totalWaitTime) {
+    public void setTotalWaitTime(int totalWaitTime) {
         this.totalWaitTime = totalWaitTime;
     
     }
     
-    public void serveCustomer(Customer customer, int currentTime) {
-        available = false;
-        int waitTime = currentTime - customer.getArriveTime().toSeconds();
+    public void serveCustomer(Customer customer, int currentTimeInSeconds) {
+        isAvailable = false;
+        int waitTime = currentTimeInSeconds - customer.getArriveTime().toSeconds();
         totalWaitTime += waitTime;
         customersServed++;
-        simulateCheckout(customer.getCheckoutDuration());
-        available = true;
+        customer.setFinishCheckoutTime(Time.fromSeconds(currentTimeInSeconds + customer.getCheckoutDuration()));
+        queue.add(customer);
+        maxQueueLength = Math.max(maxQueueLength, queue.size());
+        isAvailable = true;
+    } 
+
+    public int getMaxQueueLength() {
+        return maxQueueLength;
     }
 
+    public void addCustomerToQueue(Customer customer) {
+        queue.add(customer);
+        maxQueueLength = Math.max(maxQueueLength, queue.size());
+    }
+
+    public void processQueue(int currentTimeInSeconds) {
+        if (!queue.isEmpty() && isAvailable) {
+            Customer customer = queue.poll();
+            serveCustomer(customer, currentTimeInSeconds);
+        }
+    }
+ /////////////////our code , but optional//////////////////////////////
     public Time averageWaitingTime() {
         if (customersServed == 0) {
             return new Time();
         }
-        Time temp = new Time(totalWaitTime.toSeconds() / customersServed);
+        Time temp = new Time(totalWaitTime / customersServed);
         return temp;
     }
 
@@ -240,6 +277,7 @@ class CheckoutStation {
     public void setQueue(Queue<Customer> queue) {
         this.queue = queue;
     }
+    ///////////////////////////////////////////////////
 }
 
 class Line {
@@ -260,6 +298,16 @@ class Line {
         return stations.get(index);
     }
 }
+
+
+
+/** 
+ *  
+ *  High Possibility of adding another new class called storeModel: 
+ * a class that we do and tests different models being asked.
+ * 
+ */
+
 
 public class Checkout {
     // Constant variables for the models
