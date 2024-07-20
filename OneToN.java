@@ -31,11 +31,9 @@ public class OneToN{
             }
             // look for a register that is not occupied and checkout a customer at that register
             // should break if the line is empty or the registers are full
-            while(!line.isEmpty() && !registersFull()){
-                Customer customer = line.pop();
-                for(Register register: registers){
-                    register.checkout(customer, i);
-                    break;
+            for(Register register : registers){
+                if(!line.isEmpty()){
+                    register.checkout(line.pop(), i);
                 }
             }
 
@@ -61,14 +59,6 @@ public class OneToN{
         }
     }
 
-    private boolean registersFull(){
-        for(Register register : registers){
-            if(!register.occupied()){
-                return false;
-            }
-        }
-        return true;
-    }
  
 
     class Customer{
@@ -94,14 +84,12 @@ public class OneToN{
             this.id = id;
             readyTime = 0;
         }
-
         boolean occupied(){
             return this.occupied;
         }
 
         void checkout(Customer customer, int timeAccepted){
             int checkOutTime = 10*customer.getItems();
-            
             if(timeAccepted >= readyTime){
                 this.occupied = false;
             }
@@ -113,7 +101,7 @@ public class OneToN{
                 System.out.printf("Processing customer with %d items at register %d. Will reopen in %.2f minutes\n", customer.getItems(), this.id, checkOutTime / 60.0);
             }
             else{
-                System.out.println("Register is occupied!");
+                System.out.printf("Register %d is occupied!\n", this.id);
             }
         }
 

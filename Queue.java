@@ -13,7 +13,7 @@ public class Queue<T> {
      * Create a new Queue
      */
     public Queue() {
-        this.items = new ArrayList<T>();
+        this.items = new ArrayList<>();
     }
     
     /*
