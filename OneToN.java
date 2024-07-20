@@ -18,12 +18,13 @@ public class OneToN{
     private final Random random;
     private final int numberOfStations = 6;
     private int time;
+    private int timeToEnd;
     
     public OneToN(){
         line = new Line();
         random = new Random();
         stations = new ArrayList<>();
-
+        timeToEnd = 0;
         for(int i = 1; i <= numberOfStations; ++i){
             stations.add(new CheckoutStation(i));
         }
@@ -47,7 +48,7 @@ public class OneToN{
             // look for a register that is not occupied and checkout a customer at that register
             for(CheckoutStation station : stations){
                 if(!line.isEmpty()){
-                    station.checkout(line, time);
+                    timeToEnd += station.checkout(line, time);
                 }
                 else break;
             }
@@ -63,6 +64,7 @@ public class OneToN{
             customersServed += station.getCustomersServed();
         }
         System.out.printf("Served %d customers\n", customersServed);
+        System.out.printf("Average waiting time: %s\n", Time(timeToEnd / customersServed));
     }
     
     private void genCustomer() {
@@ -73,7 +75,7 @@ public class OneToN{
         int numberOfCustomers = MIN_PEOPLE + random.nextInt(MAX_PEOPLE); // Anywhere from 0 to 3 people enter the store
         if(random.nextDouble() < PROBABILITY){
             for(int i = 0; i < numberOfCustomers; ++i){
-                line.add(new Customer());
+                line.add(new Customer(this.time));
             }
             if(numberOfCustomers > 1){
                 System.out.printf("%d customers queued up in line (%s)\n", numberOfCustomers, Time(time));
@@ -99,15 +101,21 @@ public class OneToN{
 
     class Customer{
         private final int numItems;
+        private final int timeStart;
         private static final int MAX_ITEMS = 20;
         private static final int MIN_ITEMS = 10;
         
-        Customer(){
+        Customer(int time){
+            this.timeStart = time;
             this.numItems = MIN_ITEMS + random.nextInt(MAX_ITEMS);
         }
 
         int getItems(){
             return this.numItems;
+        }
+
+        int timeSpentInLine(int time){
+            return time - this.timeStart;
         }
 
     }
@@ -132,8 +140,7 @@ public class OneToN{
             return this.isBusy;
         }
 
-        void checkout(Line line, int currentTime){
-            
+        int checkout(Line line, int currentTime){
             if(currentTime >= waitingTime){
                 this.isBusy = false;
             }
@@ -145,7 +152,10 @@ public class OneToN{
                 this.waitingTime = currentTime + checkOutTime;
                 customersServed++;
                 System.out.printf("Processing customer with %d items at register %d (%s). Will reopen @ %s\n", customer.getItems(), this.id, Time(currentTime), Time(waitingTime));
+                return customer.timeSpentInLine(waitingTime);
             }
+
+            return 0;
         }
 
         int getCustomersServed(){
