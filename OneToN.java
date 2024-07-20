@@ -74,6 +74,11 @@ public class OneToN{
         if(random.nextDouble() < PROBABILITY){
             for(int i = 0; i < numberOfCustomers; ++i){
                 line.add(new Customer());
+            }
+            if(numberOfCustomers > 1){
+                System.out.printf("%d customers queued up in line (%s)\n", numberOfCustomers, Time(time));
+            }
+            else if(numberOfCustomers == 1){
                 System.out.printf("Customer queued up in line (%s)\n", Time(time));
             }
         }
