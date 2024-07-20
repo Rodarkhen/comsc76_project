@@ -17,6 +17,7 @@ public class OneToN{
     private final ArrayList<CheckoutStation> stations;
     private final Random random;
     private final int numberOfStations = 6;
+    private int time;
     
     public OneToN(){
         line = new Line();
@@ -34,9 +35,10 @@ public class OneToN{
         
         int maxCustomers = line.getCustomers();
         // For loop is our clock that runs every second (7200 seconds = 2 hours)
-        for(int i = 0; i < MODEL_DURATION; ++i){
+        System.out.printf("Store is opening (%s)\n", Time(time));
+        for(time = 0; time < MODEL_DURATION; ++time){
             // Every 50 seconds call genCustomer() which has a 1/3 chance of generating 1 to 3 customers
-            if(i % CUSTOMER_FREQ == 0){
+            if(time % CUSTOMER_FREQ == 0){
                 genCustomer();
             }
             if(line.getCustomers() > maxCustomers){
@@ -45,12 +47,13 @@ public class OneToN{
             // look for a register that is not occupied and checkout a customer at that register
             for(CheckoutStation station : stations){
                 if(!line.isEmpty()){
-                    station.checkout(line.pop(), i);
+                    station.checkout(line, time);
                 }
+                else break;
             }
 
         }
-        System.out.println("Store is closing!");
+        System.out.printf("Store is closing! (%s)\n", Time(time));
         System.out.printf("Max queue length: %d\n", maxCustomers);
     }
 
@@ -71,25 +74,37 @@ public class OneToN{
         if(random.nextDouble() < PROBABILITY){
             for(int i = 0; i < numberOfCustomers; ++i){
                 line.add(new Customer());
-                System.out.println("Customer queued up in line");
+                System.out.printf("Customer queued up in line (%s)\n", Time(time));
             }
         }
     }
 
-    class Customer{
-        private int numItems;
+    private String Time(int seconds){
+        int minutes = seconds / 60;
+        int hours = 0;
+        seconds %= 60;
+        if(minutes > 60){
+            hours = minutes / 60;
+            minutes %=  60;
+        }
 
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+
+    class Customer{
+        private final int numItems;
         private static final int MAX_ITEMS = 20;
         private static final int MIN_ITEMS = 10;
         
         Customer(){
-            //Random random = new Random();
             this.numItems = MIN_ITEMS + random.nextInt(MAX_ITEMS);
         }
 
         int getItems(){
             return this.numItems;
         }
+
     }
 
     class CheckoutStation{
@@ -112,19 +127,19 @@ public class OneToN{
             return this.isBusy;
         }
 
-        void checkout(Customer customer, int currentTime){
-            int checkOutTime = 10 * customer.getItems();
+        void checkout(Line line, int currentTime){
+            
             if(currentTime >= waitingTime){
                 this.isBusy = false;
             }
 
             if(!getIsBusy()){
+                Customer customer = line.pop();
+                int checkOutTime = 10 * customer.getItems();
                 this.isBusy = true;
                 this.waitingTime = currentTime + checkOutTime;
                 customersServed++;
-                System.out.printf("Processing customer with %d items at register %d. Will reopen in %.2f minutes\n", customer.getItems(), this.id, checkOutTime / 60.0);
-            } else {
-                System.out.printf("Register %d is occupied!\n", this.id);
+                System.out.printf("Processing customer with %d items at register %d (%s). Will reopen @ %s\n", customer.getItems(), this.id, Time(currentTime), Time(waitingTime));
             }
         }
 
@@ -148,8 +163,8 @@ public class OneToN{
         Customer pop(){
             return line.dequeue();
         }
-
-       boolean isEmpty(){
+        
+        boolean isEmpty(){
             return line.size() == 0;
         }
 
@@ -170,7 +185,7 @@ public class OneToN{
      * Create a new Queue
      */
     public Queue() {
-        this.items = new ArrayList<T>();
+        this.items = new ArrayList<>();
     }
     
     /*
@@ -220,6 +235,7 @@ public class OneToN{
     /*
      * Convert to string as an array from tail to head
      */
+    @Override
     public String toString() {
         
         if (!this.items.isEmpty()) {
