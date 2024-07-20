@@ -1,319 +1,318 @@
-/*
-*
-*/
-
 import java.util.*;
 
-class Time {
-    int hour;
-    int minute;
-    int second;
-
-    // Default constructor
-    public Time() {
-        this(0, 0, 0);
-    }
-
-    // Parameterized constructor
-    public Time(int second) {
-        this.hour = 0;
-        this.minute = 0;
-        setSecond(second);
-    }
-    // Parameterized constructor
-    public Time(int hour, int minute, int second) {
-        setHour(hour);
-        setMinute(minute);
-        setSecond(second);
-    }
-    
-    //Getter and setter methods for the attributes
-    public int getHour() {
-        return this.hour;
-    }
-    
-    public void setHour(int hour) {
-        this.hour = hour;
-    }
-    
-    public int getMinute() {
-        return this.minute;
-    }
-    
-    public void setMinute(int minute) {
-        // if (minute >= 60) {
-        //     this.hour += minute / 60; // Add the additional hours to hour
-        //     this.minute = minute % 60; // Set the minute to the remainder
-        // } else if (minute >= 0 && minute < 60){
-        //     this.minute = minute;
-        // }
-        if (minute >= 0) {
-            this.hour += minute / 60; // Add the additional hours to hour
-            this.minute = minute % 60; // Set the minute to the remainder
-        }
-    } 
-
-    public int getSecond() {
-        return this.second;
-    }
-    
-    public void setSecond(int second) {
-        // if (second >= 60) {
-        //     setMinute(second / 60);
-        //     this.second = second % 60; // Set the second to the remainder
-        // } else if (second >= 0 && second < 60){
-        //     this.second = second;
-        // }
-
-        if (second >= 0) {
-            this.setMinute(second / 60); // Add the additional minutes to minutes
-            this.second = second % 60; // Set the second to the remainder
-        }
-    }
-    
-    public void setTime(int hour, int minute, int second) {
-        setSecond(second);
-        setMinute(minute);
-        setHour(hour);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%02d:%02d:%02d", this.hour, this.minute, this.second);
-    }
-    
-    public int toSeconds() { //takes the data in an object’s properties and combines them into a single unique integer.
-        return (this.hour * 3600) + (this.minute * 60) + this.second;
-    }
-    
-    public static Time fromSeconds(int totalSeconds) {
-        int hour = totalSeconds / 3600;
-        int minute = (totalSeconds % 3600) / 60;
-        int second = totalSeconds % 60;
-        return new Time(hour, minute, second);
-    }
-
-    public void addSeconds(int seconds) {
-        int totalSeconds = this.toSeconds() + seconds;
-        Time newTime = Time.fromSeconds(totalSeconds);
-        this.setTime(newTime.getHour(), newTime.getMinute(), newTime.getSecond());
-    }
-}
-
-class Customer {
-    private int numItems;
-    private Time arriveTime; //arrival time of customer in to queue for checkout station 
-    private int checkoutDuration; // time user needed for checkout in seconds 
-    private Time finishCheckoutTime;
-    private static Random random = new Random(); // Random object for generating random numbers
-
-    private static final int TIME_PER_ITEM = 5; // Time to scan each item (seconds)
-    private static final int PAYMENT_TIME = 30; // Time to pay (seconds)
-    private static final int MAX_ITEMS = 30;
-    private static final int MIN_ITEMS = 1;
-
-    public Customer(int arriveTimeInSeconds) {
-        this.numItems = random.nextInt(MAX_ITEMS) + MIN_ITEMS;     //number will be randomized in main method
-        this.arriveTime = Time.fromSeconds(arriveTimeInSeconds);
-        this.checkoutDuration = numItems * TIME_PER_ITEM + PAYMENT_TIME;
-    }
-    
-    /*public Customer(int numItems, Time arriveTime, int checkoutDuration) {
-        this.numItems = numItems;     //number will be randomized in main method
-        this.arriveTime = arriveTime;
-        this.checkoutDuration = checkoutDuration;
-    }
-    */
-    
-    public int getNumItems() {
-        return this.numItems;  
-    }
-    
-   /* public void setNumItems(){
-        this.numItems= random.nextInt(30) + 1; // Generates a number between 1 and 30 (inclusive)
-    }*/
-
-    public Time getArriveTime() {
-        return this.arriveTime;  
-    }
-    
-    /*public void setArriveTime(Time arriveTime){
-        this.arriveTime = arriveTime;
-    } */ 
-
-    public int getCheckoutDuration() {
-        return this.checkoutDuration;  
-    }
-
-    /*// Setter for checkoutDuration
-     public void setCheckoutDuration(int checkoutDuration) {
-        this.checkoutDuration = checkoutDuration;
-        this.totalTime = calculateTotalTime(); // Update totalTime
-    }
-        */
-
-    /*// Method to calculate total time
-    private Time calculateTotalTime() {
-        return this.arriveTime.addDuration(this.checkoutDuration);
-    }
-
-    // Getter for totalTime
-    public Time getTotalTime() {
-        return this.totalTime;
-    }
-        */
-
-    public void setFinishCheckoutTime(Time finishCheckoutTime) {
-        this.finishCheckoutTime = finishCheckoutTime;
-    }
-
-    public Time getFinishCheckoutTime() {
-        return finishCheckoutTime;
-    }
-    
-
-    // toString method to print the attributes of Customers class
-    @Override
-    public String toString() {
-        return String.format("Customers[numItems=%d, arriveTime=%s, checkoutDuration=%d, finishCheckoutTime=%s]", 
-                             numItems, arriveTime.toString(), checkoutDuration, finishCheckoutTime.toString());
-    }
-    
-}
-
-/*  class CheckoutStation {
-    private int numCustomers;       // number of customers served
-    private boolean isAvailable;    // if the checkout station is available
-    private double avgCustomer;     // average customer per checkout line
-    private Time avgWaitingTime;    // average waiting time to get to the station
-    private Time totalTime;         // 
-    }
-*/
-
-class CheckoutStation {
-    private Queue<Customer> queue;
-    private boolean isAvailable;
-    private int customersServed;
-    private int totalWaitTime;
-    private int maxQueueLength;
-
-    // default constructor
-    public CheckoutStation() {
-        this.queue = new LinkedList<>();
-        this.isAvailable = true;
-        this.customersServed = 0;
-        this.totalWaitTime = 0;
-        this.maxQueueLength = 0;
-    }
-
-    public boolean isAvailable() {
-        return isAvailable;
-    }
-
-    public void busy() {
-        this.isAvailable = false;
-    }
-
-    public void empty() {
-        this.isAvailable = true;
-    }
-
-    public int getCustomersServed() {
-        return customersServed;
-    }
-
-    public void setCustomersServed(int customersServed) {
-        this.customersServed = customersServed;
-    }
-
-    public int getTotalWaitTime() {
-        return totalWaitTime;
-    }
-
-    public void setTotalWaitTime(int totalWaitTime) {
-        this.totalWaitTime = totalWaitTime;
-    
-    }
-    
-    public void serveCustomer(Customer customer, int currentTimeInSeconds) {
-        isAvailable = false;
-        int waitTime = currentTimeInSeconds - customer.getArriveTime().toSeconds();
-        totalWaitTime += waitTime;
-        customersServed++;
-        customer.setFinishCheckoutTime(Time.fromSeconds(currentTimeInSeconds + customer.getCheckoutDuration()));
-        queue.add(customer);
-        maxQueueLength = Math.max(maxQueueLength, queue.size());
-        isAvailable = true;
-    } 
-
-    public int getMaxQueueLength() {
-        return maxQueueLength;
-    }
-
-    public void addCustomerToQueue(Customer customer) {
-        queue.add(customer);
-        maxQueueLength = Math.max(maxQueueLength, queue.size());
-    }
-
-    public void processQueue(int currentTimeInSeconds) {
-        if (!queue.isEmpty() && isAvailable) {
-            Customer customer = queue.poll();
-            serveCustomer(customer, currentTimeInSeconds);
-        }
-    }
- /////////////////our code , but optional//////////////////////////////
-    public Time averageWaitingTime() {
-        if (customersServed == 0) {
-            return new Time();
-        }
-        Time temp = new Time(totalWaitTime / customersServed);
-        return temp;
-    }
-
-    public Queue<Customer> getQueue() {
-        return queue;
-    }
-
-    public void setQueue(Queue<Customer> queue) {
-        this.queue = queue;
-    }
-    ///////////////////////////////////////////////////
-}
-
-class Line {
-    List<CheckoutStation> stations;
-
-    public Line(int numStations) {
-        stations = new ArrayList<>();
-        for (int i = 0; i < numStations; i++) {
-            stations.add(new CheckoutStation());
-        }
-    }
-
-    public int size() {
-        return stations.size();
-    }
-
-    public CheckoutStation getStation(int index) {
-        return stations.get(index);
-    }
-}
-
-
-
-/** 
- *  
- *  High Possibility of adding another new class called storeModel: 
- * a class that we do and tests different models being asked.
- * 
- */
-
-
 public class Checkout {
-    // Constant variables for the models
-    final int MODEL_DURATION = 2 * 60 * 60;
-    
-    public static void main() {
-        
+    public static void main(String[] args) {
+        System.out.println("Model 1 running.....");
+        Model1 store1 = new Model1();
+        store1.run();
+        store1.close();
+        System.out.println("\n==========================================================");
+        System.out.println("Model 3 running........");
+        Model3 store3 = new Model3();
+        store3.run();
+        store3.close();
+    }
+}
+
+abstract class CheckoutModel {
+    protected boolean debugMode = false;
+    // total duration that the model will operate in seconds
+    final int MODEL_DURATION = 7200; // (7200 seconds = 2 hours)
+
+    // The range of items that customers can hold
+    private static final int MAX_ITEMS = 20;
+    private static final int MIN_ITEMS = 10;
+
+    protected final int MAX_PEOPLE = 4;
+    protected final int MIN_PEOPLE = 1;
+    protected final double PROBABILITY = 0.33;
+    final int CUSTOMER_ARRIVAL_INTERVAL = 50;
+
+    protected final ArrayList<Line> lines;
+    protected final ArrayList<CheckoutStation> stations;
+    protected final Random random;
+    protected final int numberOfStations = 6;
+    protected int time;
+    protected int timeToEnd;
+
+    public CheckoutModel() {
+        lines = new ArrayList<>();
+        random = new Random();
+        stations = new ArrayList<>();
+        timeToEnd = 0;
+
+        for (int i = 1; i <= numberOfStations; ++i) {
+            lines.add(new Line());
+            stations.add(new CheckoutStation(i));
+        }
+    }
+
+    public void run() {
+        int maxCustomers = getTotalCustomers();
+        // For loop is our clock that runs every second (7200 seconds = 2 hours)
+        System.out.printf("Store is opening (%s)\n", Time(time));
+        for (time = 0; time < MODEL_DURATION; ++time) {
+            // Every 50 seconds call genCustomer() which has a 1/3 chance of generating 1 to 3 customers
+            if (time % CUSTOMER_ARRIVAL_INTERVAL == 0) {
+                genCustomer();
+            }
+            if (getTotalCustomers() > maxCustomers) {
+                maxCustomers = getTotalCustomers();
+            }
+            // look for a register that is not occupied and checkout a customer at that register
+            for (CheckoutStation station : stations) {
+                if (!lines.isEmpty()) {
+                    timeToEnd += station.checkout(lines, time);
+                }
+            }
+        }
+        System.out.printf("Store is closing! (%s)\n", Time(time));
+        System.out.printf("Max queue length: %d\n", maxCustomers);
+    }
+
+    protected abstract void genCustomer();
+
+    public void close() {
+        int customersServed = 0;
+        System.out.println("---------------------------------------------------------");
+        System.out.println("Station \tCustomers Served\tAvg Waiting Time");
+        System.out.println("---------------------------------------------------------");
+        for (CheckoutStation station : stations) {
+            customersServed += station.getCustomersServed();
+            System.out.printf("%4d\t  %14d\t\t  %10s\n", station.getId(), station.getCustomersServed(), Time(station.getTotalTimeSpent() / (station.getCustomersServed() == 0 ? 1 : station.getCustomersServed())));
+        }
+        System.out.println("---------------------------------------------------------");
+        System.out.printf("Served %d customers\n", customersServed);
+        System.out.printf("Average waiting time: %s\n", Time(timeToEnd / (customersServed == 0 ? 1 : customersServed)));
+    }
+
+    protected String Time(int seconds) {
+        int minutes = seconds / 60;
+        int hours = 0;
+        seconds %= 60;
+        if (minutes > 60) {
+            hours = minutes / 60;
+            minutes %= 60;
+        }
+
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+    protected int getTotalCustomers() {
+        int totalCustomers = 0;
+        for (Line line : lines) {
+            totalCustomers += line.getCustomers();
+        }
+        return totalCustomers;
+    }
+
+    class Customer {
+        private final int numItems;
+        private final int timeStart;
+        private final Random random;
+
+        Customer(int time) {
+            this.random = new Random();
+            this.timeStart = time;
+            this.numItems = MIN_ITEMS + this.random.nextInt(MAX_ITEMS);
+        }
+
+        int getItems() {
+            return this.numItems;
+        }
+
+        int timeSpentInLine(int time) {
+            return time - this.timeStart;
+        }
+    }
+
+    class CheckoutStation {
+        private final int id;
+        private int customersServed;
+        private int totalTimeSpent;
+        private boolean isBusy; // checkout station is busy
+        private int waitingTime;
+
+        CheckoutStation(int id) {
+            this.isBusy = false;
+            this.id = id;
+            this.waitingTime = 0;
+            this.totalTimeSpent = 0;
+        }
+
+        boolean getIsBusy() {
+            return this.isBusy;
+        }
+
+        int checkout(ArrayList<Line> lines, int currentTime) {
+            if (currentTime >= waitingTime) {
+                this.isBusy = false;
+            }
+
+            if (!getIsBusy() && !lines.isEmpty()) {
+                for (Line line : lines) {
+                    if (!line.isEmpty()) {
+                        Customer customer = line.pop();
+                        int checkOutTime = 10 * customer.getItems();
+                        this.isBusy = true;
+                        this.waitingTime = currentTime + checkOutTime;
+                        this.totalTimeSpent += customer.timeSpentInLine(waitingTime);
+                        customersServed++;
+                        if (debugMode)
+                            System.out.printf("Processing customer with %d items at register %d (%s). Will reopen @ %s\n", customer.getItems(), this.id, Time(currentTime), Time(waitingTime));
+                        return customer.timeSpentInLine(waitingTime);
+                    }
+                }
+            }
+            return 0;
+        }
+
+        int getCustomersServed() {
+            return this.customersServed;
+        }
+
+        int getTotalTimeSpent() {
+            return this.totalTimeSpent;
+        }
+
+        int getId() {
+            return this.id;
+        }
+    }
+
+    class Line {
+        private final Queue<Customer> line;
+
+        Line() {
+            line = new Queue<>();
+        }
+
+        void add(Customer customer) {
+            line.enqueue(customer);
+        }
+
+        Customer pop() {
+            return line.dequeue();
+        }
+
+        boolean isEmpty() {
+            return line.size() == 0;
+        }
+
+        int getCustomers() {
+            return line.size();
+        }
+    }
+}
+
+class Model1 extends CheckoutModel {
+    @Override
+    public void genCustomer() {
+        int numberOfCustomers = MIN_PEOPLE + random.nextInt(MAX_PEOPLE); // Anywhere from 0 to 3 people enter the store
+        if (random.nextDouble() < PROBABILITY) {
+            for (int i = 0; i < numberOfCustomers; ++i) {
+                lines.get(0).add(new Customer(this.time));
+            }
+            if (debugMode) {
+                if (numberOfCustomers > 1) {
+                    System.out.printf("%d customers queued up in line (%s)\n", numberOfCustomers, Time(time));
+                } else if (numberOfCustomers == 1) {
+                    System.out.printf("Customer queued up in line (%s)\n", Time(time));
+                }
+            }
+        }
+    }
+}
+
+class Model3 extends CheckoutModel {
+    @Override
+    public void genCustomer() {
+        int numberOfCustomers = MIN_PEOPLE + random.nextInt(MAX_PEOPLE); // Anywhere from 0 to 3 people enter the store
+
+        if (random.nextDouble() < PROBABILITY) {
+            for (int i = 0; i < numberOfCustomers; ++i) {
+                int randomLineIndex = random.nextInt(numberOfStations);
+                lines.get(randomLineIndex).add(new Customer(this.time));
+            }
+            if (debugMode) {
+                if (numberOfCustomers > 1) {
+                    System.out.printf("%d customers queued up in line (%s)\n", numberOfCustomers, Time(time));
+                } else if (numberOfCustomers == 1) {
+                    System.out.printf("Customer queued up in line (%s)\n", Time(time));
+                }
+            }
+        }
+    }
+}
+
+class Queue<T> {
+    /*
+     * The tail of the queue is at the beginning
+     * of the ArrayList; the head is the last item
+     */
+    ArrayList<T> items;
+
+    /*
+     * Create a new Queue
+     */
+    public Queue() {
+        this.items = new ArrayList<>();
+    }
+
+    /*
+     * Returns true if there are no items in the queue;
+     * false otherwise.
+     */
+    public boolean isEmpty() {
+        return (this.items.isEmpty());
+    }
+
+    /*
+     * Add an item to the tail of the queue
+     */
+    public void enqueue(T item) {
+        this.items.add(0, item);
+    }
+
+    /*
+     * Remove the item at the head of the queue and return it.
+     * If the queue is empty, throws an exception.
+     */
+    public T dequeue() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException("Queue is empty.");
+        }
+        return this.items.remove(this.size() - 1);
+    }
+
+    /*
+     * Return the item at the head of the queue, but do not remove it.
+     * If the queue is empty, throws an exception.
+     */
+    public T peek() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException("Queue is empty.");
+        }
+        return this.items.get(this.size() - 1);
+    }
+
+    /*
+     * Returns the number of items in the queue.
+     */
+    public int size() {
+        return this.items.size();
+    }
+
+    /*
+     * Convert to string as an array from tail to head
+     */
+    @Override
+    public String toString() {
+        if (!this.items.isEmpty()) {
+            String arrString = this.items.toString();
+            return "tail ->" + arrString + "-> head";
+        } else {
+            return "<<empty queue>>";
+        }
     }
 }
