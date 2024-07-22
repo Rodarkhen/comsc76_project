@@ -3,26 +3,26 @@ import java.util.*;
 public class Checkout {
     public static void main(String[] args) {
         System.out.println("Model 1 running.....");
-        Model1 store1 = new Model1();
+        CheckoutModel store1 = new Model1();
         store1.run();
         store1.close();
         System.out.println("\n==========================================================");
 
         System.out.println("Model 2 running........");
-        Model2 store2 = new Model2();
+        CheckoutModel store2 = new Model2();
         store2.run();
         store2.close();
         System.out.println("\n==========================================================");
 
         System.out.println("Model 3 running........");
-        Model3 store3 = new Model3();
+        CheckoutModel store3 = new Model3();
         store3.run();
         store3.close();
     }
 }
 
 abstract class CheckoutModel {
-    protected boolean debugMode = false;
+    protected boolean debugMode = true;
     // total duration that the model will operate in seconds
     final int MODEL_DURATION = 7200; // (7200 seconds = 2 hours)
 
@@ -32,8 +32,8 @@ abstract class CheckoutModel {
 
     protected final int MAX_PEOPLE = 4;
     protected final int MIN_PEOPLE = 1;
-    protected final double PROBABILITY = 0.33;
-    final int CUSTOMER_ARRIVAL_INTERVAL = 50;
+    protected final double PROBABILITY = 1;
+    final int CUSTOMER_ARRIVAL_INTERVAL = 1;
 
     // Variables to the CheckoutModel class
     protected final ArrayList<Line> lines;
@@ -42,12 +42,14 @@ abstract class CheckoutModel {
     protected final int numberOfStations = 6;
     protected int time;
     protected int timeToEnd; // checkout duration
-
+    
+    private final int modelNum;
     public CheckoutModel(int modelNum) {
         lines = new ArrayList<>();
         stations = new ArrayList<>();
         random = new Random();
         timeToEnd = 0;
+        this.modelNum = modelNum;
 
         if (modelNum == 1) {
             lines.add(new Line());
@@ -56,7 +58,7 @@ abstract class CheckoutModel {
             }
         } else if (modelNum > 1) {
             for (int i = 1; i <= numberOfStations; ++i) {
-                lines.add(new Line());
+                lines.add(new Line(i));
                 stations.add(new CheckoutStation(i));
             }
         }
@@ -77,9 +79,14 @@ abstract class CheckoutModel {
             }
             // look for a register that is not occupied and checkout a customer at that
             // register
-            for (CheckoutStation station : stations) { // ATTENTION
-                if (!lines.isEmpty()) {
+            if(modelNum == 1){
+                for (CheckoutStation station : stations) { // ATTENTION
                     timeToEnd += station.checkout(lines, time);
+                }
+            }
+            else if (modelNum > 1){
+                for (int i = 0; i < numberOfStations; ++i){
+                    timeToEnd += stations.get(i).checkout(lines.get(i), time);
                 }
             }
         }
@@ -109,7 +116,7 @@ abstract class CheckoutModel {
         int minutes = seconds / 60;
         int hours = 0;
         seconds %= 60;
-        if (minutes > 60) {
+        if (minutes >= 60) {
             hours = minutes / 60;
             minutes %= 60;
         }
@@ -168,7 +175,7 @@ abstract class CheckoutModel {
             if (currentTime >= waitingTime) {
                 this.isBusy = false;
             }
-
+            
             if (!getIsBusy() && !lines.isEmpty()) {
                 for (Line line : lines) {
                     if (!line.isEmpty()) {
@@ -178,10 +185,12 @@ abstract class CheckoutModel {
                         this.waitingTime = currentTime + checkOutTime;
                         this.totalTimeSpent += customer.timeSpentInLine(waitingTime);
                         customersServed++;
+                        
                         if (debugMode)
                             System.out.printf(
                                     "Processing customer with %d items at register %d (%s). Will reopen @ %s\n",
                                     customer.getItems(), this.id, Time(currentTime), Time(waitingTime));
+                        
                         return customer.timeSpentInLine(waitingTime);
                     }
                 }
@@ -189,6 +198,30 @@ abstract class CheckoutModel {
             return 0;
         }
 
+        int checkout(Line line, int currentTime) {
+            if (currentTime >= waitingTime) {
+                this.isBusy = false;
+            }
+            
+            if (!getIsBusy() && !lines.isEmpty()) {
+                if (!line.isEmpty()) {
+                    Customer customer = line.pop();
+                    int checkOutTime = 10 * customer.getItems();
+                    this.isBusy = true;
+                    this.waitingTime = currentTime + checkOutTime;
+                    this.totalTimeSpent += customer.timeSpentInLine(waitingTime);
+                    customersServed++;
+                    
+                    if (debugMode)
+                        System.out.printf(
+                                "Processing customer from line %d with %d items at register %d (%s). Will reopen @ %s\n",
+                                line.getID(), customer.getItems(), this.id, Time(currentTime), Time(waitingTime));
+                    
+                    return customer.timeSpentInLine(waitingTime);
+                }
+            }
+            return 0;
+        }
         int getCustomersServed() {
             return this.customersServed;
         }
@@ -204,9 +237,14 @@ abstract class CheckoutModel {
 
     class Line {
         private final Queue<Customer> line;
-
-        Line() {
+        private final int id;
+        Line(){
             line = new Queue<>();
+            this.id = 1;
+        }
+        Line(int i) {
+            line = new Queue<>();
+            this.id = i;
         }
 
         void add(Customer customer) {
@@ -223,6 +261,9 @@ abstract class CheckoutModel {
 
         int getCustomers() {
             return line.size();
+        }
+        int getID(){
+            return this.id;
         }
     }
 }
