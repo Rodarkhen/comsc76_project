@@ -22,7 +22,7 @@ public class Checkout {
 }
 
 abstract class CheckoutModel {
-    protected boolean debugMode = true;
+    protected boolean debugMode = false;
     // total duration that the model will operate in seconds
     final int MODEL_DURATION = 7200; // (7200 seconds = 2 hours)
 
@@ -32,8 +32,8 @@ abstract class CheckoutModel {
 
     protected final int MAX_PEOPLE = 4;
     protected final int MIN_PEOPLE = 1;
-    protected final double PROBABILITY = 1;
-    final int CUSTOMER_ARRIVAL_INTERVAL = 1;
+    protected final double PROBABILITY = 0.33;
+    final int CUSTOMER_ARRIVAL_INTERVAL = 50;
 
     // Variables to the CheckoutModel class
     protected final ArrayList<Line> lines;
@@ -51,12 +51,12 @@ abstract class CheckoutModel {
         timeToEnd = 0;
         this.modelNum = modelNum;
 
-        if (modelNum == 1) {
+        if (this.modelNum == 1) {
             lines.add(new Line());
             for (int i = 1; i <= numberOfStations; ++i) {
                 stations.add(new CheckoutStation(i));
             }
-        } else if (modelNum > 1) {
+        } else if (this.modelNum > 1) {
             for (int i = 1; i <= numberOfStations; ++i) {
                 lines.add(new Line(i));
                 stations.add(new CheckoutStation(i));
@@ -68,6 +68,7 @@ abstract class CheckoutModel {
         int maxCustomers = getTotalCustomers();
         // For loop is our clock that runs every second (7200 seconds = 2 hours)
         System.out.printf("Store is opening (%s)\n", Time(time));
+        System.out.println("..........");
         for (time = 0; time < MODEL_DURATION; ++time) {
             // Every 50 seconds call genCustomer() which has a 1/3 chance of generating 1 to
             // 3 customers
@@ -77,8 +78,8 @@ abstract class CheckoutModel {
             if (getTotalCustomers() > maxCustomers) {
                 maxCustomers = getTotalCustomers();
             }
-            // look for a register that is not occupied and checkout a customer at that
-            // register
+            // look for a register that is not occupied and checkout a customer at that register
+            
             if(modelNum == 1){
                 for (CheckoutStation station : stations) { // ATTENTION
                     timeToEnd += station.checkout(lines, time);
