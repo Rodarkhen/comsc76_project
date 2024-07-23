@@ -25,7 +25,6 @@ abstract class CheckoutModel {
     protected boolean debugMode = false;
     // total duration that the model will operate in seconds
     final int MODEL_DURATION = 7200; // (7200 seconds = 2 hours)
-
     // The range of items that customers can hold
     private static final int MAX_ITEMS = 20;
     private static final int MIN_ITEMS = 10;
@@ -160,6 +159,8 @@ abstract class CheckoutModel {
         private int totalTimeSpent;
         private boolean isBusy; // checkout station is busy
         private int waitingTime;
+        private final int SCAN_TIME = 10; 
+        private final int PAY_TIME = 20;
 
         CheckoutStation(int id) {
             this.isBusy = false;
@@ -181,7 +182,7 @@ abstract class CheckoutModel {
                 for (Line line : lines) {
                     if (!line.isEmpty()) {
                         Customer customer = line.pop();
-                        int checkOutTime = 10 * customer.getItems();
+                        int checkOutTime = (SCAN_TIME * customer.getItems()) + PAY_TIME;
                         this.isBusy = true;
                         this.waitingTime = currentTime + checkOutTime;
                         this.totalTimeSpent += customer.timeSpentInLine(waitingTime);
@@ -207,7 +208,7 @@ abstract class CheckoutModel {
             if (!getIsBusy() && !lines.isEmpty()) {
                 if (!line.isEmpty()) {
                     Customer customer = line.pop();
-                    int checkOutTime = 10 * customer.getItems();
+                    int checkOutTime = (SCAN_TIME * customer.getItems()) + PAY_TIME;
                     this.isBusy = true;
                     this.waitingTime = currentTime + checkOutTime;
                     this.totalTimeSpent += customer.timeSpentInLine(waitingTime);
